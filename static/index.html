@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Match My Word</title>
     <link rel="stylesheet" href="/static/styles.css" />
     <link href="https://fonts.googleapis.com/css?family=Rowdies" rel="stylesheet">
@@ -12,14 +12,15 @@
 </head>
 
 <body>
-    <div id="header" style="font-size: 1.2em;font-family: Rowdies;">
+    <div id="header">
         <div id="en-ru" class="control">en</div>
+        <div id="reset" class="control" role="button" tabindex="0" aria-label="Reset input and keyboard colors" title="Reset input and keyboard colors">&#8635;</div>
         <div id="less" class="control">-</div>
-        <div id="title" style="font-size: 1.2em;font-family: Rowdies;">MATCH MY WORD</div>
+        <div id="title">MATCH MY WORD</div>
         <div id="more" class="control">+</div>
         <div id="hbtn" class="control">?</div>
     </div>
-    <div id="help" class="popdown"></div>    
+    <div id="help" class="popdown"></div>
     <div id="inputs" class="inputs">
         <div class="letter"></div>
         <div class="letter"></div>
@@ -27,10 +28,16 @@
         <div class="letter"></div>
         <div class="letter"></div>
     </div>
-    <div id="results"</div>
+    <div id="results"></div>
 </body>
 <script>
     $("#en-ru").click(toggle_api);
+    $("#reset").on("click", reset_game).on("keydown", function(event) {
+        if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            reset_game();
+        }
+    });
     $("#hbtn,#help").click(function(){
         $("#help").load("/static/"+$("#en-ru").text()+"_help.html");
         $("#help").toggleClass(["popup","popdown"]);

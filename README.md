@@ -10,17 +10,22 @@ Type part of a word you have, and it will offer you matching combinations. You c
 
 ![Match My Word start Page](https://user-images.githubusercontent.com/10143072/158813911-c6bda072-0f9d-4f5e-84fd-69ff6220a7e3.png)
 
-Additional controls are: 
+Additional controls:
 
 | Button | Description |
 |---|---|
-| __EN/RU__ | Switches search between English and Russian dictionaries | 
-| __-__/__+__ | decrease or increase word length | 
-| __?__ | Quick reference card | 
+| __EN/RU__ | Switches between the English and Russian dictionaries |
+| __↻__ | Clears the input and resets excluded keyboard letters |
+| __-__/__+__ | Decreases or increases the word length |
+| __Enter__ | Submits the current search mask |
+| Right-click a letter (or press and hold on touch screens) | Marks it gray to exclude words containing that letter; repeat to include it again |
+| __?__ | Opens the quick reference card |
+
+The interface adapts to phone, tablet, and desktop screen sizes.
 
 
 ### Internet Access
-The latest application version is available on my website - (__TODO__)
+The latest application version is available on my website - https://matchword.mikhailidi.me/
 
 ### Local Container
 
@@ -30,6 +35,13 @@ If you prefer to run a local copy - pull the docker image and run it on your loc
     
 Now the application should be available at http://127.0.0.1/. 
 
+### Automated container builds
+
+GitHub Actions builds the container on pull requests targeting `main` without publishing it. Pushes to `main`, version tags (`v*`), and manually dispatched runs build and publish to Docker Hub at `docker.io/mikhailidim/match-my-word`.
+
+Configure the repository Actions secrets `DOCKER_HUB_USERNAME` and `DOCKER_HUB_ACCESS_TOKEN` with a Docker Hub username and access token to enable publishing. Main-branch images are tagged `main` and `latest`; version-tag builds receive version and commit-SHA tags.
+
+>>>>>>> e2546de4d63353ce2d0986f2bbe994d14fa0e9f1
 ## Source Code
 
 If you prefer to deal with the source code - clone this repository and configure the application for execution. 

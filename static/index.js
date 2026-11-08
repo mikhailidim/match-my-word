@@ -3,6 +3,14 @@ var ifocus = 0;
 var pattern = 5;
 var rLetters = /[a-zA-Z]|[а-яА-Я]/;
 var guessAPI = "/guess/api/v1.0/en/";
+var lang = "en";
+var excludedLettersByLanguage = {
+    en: new Set(),
+    ru: new Set()
+};
+var searchRequestId = 0;
+var exclusionPressTimer = null;
+var longPressedButton = null;
 
 function toggle_api(event) {
     switch (typeof event) {
@@ -19,17 +27,36 @@ function toggle_api(event) {
     // $("#title").html( lang === "en" ? "MATCH MY WORD" : "НАЙДИ МНЕ СЛОВО");
     guessAPI = `/guess/api/v1.0/${lang}/`;
     kbdSrc = `/static/${lang}_kbd.html`;
-    $("#keyboard").children().remove();
-    $("<div id='keyboard'></div>").insertAfter($("#results"));
-    $("#keyboard").load(kbdSrc, () => {
-        $("button").on("click", btn_click);
+    $("#keyboard").remove();
+    const keyboard = $("<div id='keyboard'></div>").insertAfter($("#results"));
+    keyboard.load(kbdSrc, () => {
+        keyboard.find("button").on("click", btn_click);
+        keyboard.on("contextmenu", "button[kdata]", toggle_excluded_letter);
+        keyboard.on("pointerdown", "button[kdata]", start_exclusion_press);
+        keyboard.on("pointerup pointercancel", "button[kdata]", cancel_exclusion_press);
+        const excludedLetters = excludedLettersByLanguage[lang];
+        keyboard.find("button[kdata]").each(function () {
+            const key = this.getAttribute("kdata").toLowerCase();
+            const excluded = is_letter_key(key) && excludedLetters.has(key);
+            $(this).toggleClass("excluded", excluded);
+            $(this).attr("aria-pressed", excluded);
+        });
         console.log($("#keyboard").children().length);
     });
     reset_input();
 }
 
 function btn_click(btn) {
-    var code = btn.currentTarget.attributes.kdata.value.charCodeAt();
+    if (longPressedButton === btn.currentTarget) {
+        longPressedButton = null;
+        return;
+    }
+    const keyData = btn.currentTarget.getAttribute("kdata");
+    if (keyData === "Enter") {
+        $("body").trigger("redraw", build_mask());
+        return;
+    }
+    var code = keyData.charCodeAt();
     if (code == 8592) {
         clear_letter({ "keyCode": 8 });
     } else {
@@ -38,9 +65,66 @@ function btn_click(btn) {
     $("body").trigger("keypress",);
 }
 
+function toggle_excluded_letter(event) {
+    const button = event.currentTarget;
+    const key = button.getAttribute("kdata").toLowerCase();
+    if (!is_letter_key(key)) return;
+    event.preventDefault();
+    if (longPressedButton === button) return;
+
+    const pointer = event.originalEvent;
+    if (exclusionPressTimer || (pointer && ["touch", "pen"].includes(pointer.pointerType))) {
+        cancel_exclusion_press();
+        change_excluded_letter(button, key);
+        longPressedButton = button;
+        return;
+    }
+
+    change_excluded_letter(button, key);
+}
+
+function change_excluded_letter(button, key) {
+    const excludedLetters = excludedLettersByLanguage[lang];
+    if (excludedLetters.has(key)) {
+        excludedLetters.delete(key);
+    } else {
+        excludedLetters.add(key);
+    }
+
+    $(button)
+        .toggleClass("excluded", excludedLetters.has(key))
+        .attr("aria-pressed", excludedLetters.has(key));
+    $("body").trigger("redraw", build_mask());
+}
+
+function is_letter_key(key) {
+    return key.length === 1 && rLetters.test(key);
+}
+
+function start_exclusion_press(event) {
+    longPressedButton = null;
+    const pointer = event.originalEvent;
+    const key = event.currentTarget.getAttribute("kdata");
+    if (!pointer || pointer.pointerType === "mouse" || !is_letter_key(key)) return;
+
+    clearTimeout(exclusionPressTimer);
+    const button = event.currentTarget;
+    exclusionPressTimer = setTimeout(() => {
+        exclusionPressTimer = null;
+        change_excluded_letter(button, key.toLowerCase());
+        longPressedButton = button;
+    }, 550);
+}
+
+function cancel_exclusion_press() {
+    clearTimeout(exclusionPressTimer);
+    exclusionPressTimer = null;
+}
+
 // Handle input
 // 
 function update_results(evt, data) {
+    const requestId = ++searchRequestId;
     // Complete the pattern  
     let ptr = data || "";
     if (ptr.length >= 3 && rLetters.test(ptr)) {
@@ -49,17 +133,22 @@ function update_results(evt, data) {
 
         // Query API 
         $.get(guessAPI + ptr, (data) => {
+            if (requestId !== searchRequestId) return;
+            const excludedLetters = excludedLettersByLanguage[lang];
+            const matches = data.Matches.filter(element =>
+                ![...element.toLowerCase()].some(letter => excludedLetters.has(letter))
+            );
             //Pretty Print
             $("#results").children().remove();
-            if (data.Matches.length > 0) {
-                if (data.Matches.length > 6) {
-                    $("#results").css("height", "var(--res-height)");
+            if (matches.length > 0) {
+                if (matches.length > 6) {
+                    $("#results").css("height", "var(--result-height)");
                     $("#results").css("overflow-y", "overlay");
 
                 } else
                     $("#results").css("height", "auto");
 
-                data.Matches.map(element => {
+                matches.map(element => {
                     $("#results").append(print_word(ptr, element));
                 });
             } else {
@@ -104,6 +193,15 @@ function reset_input() {
     });
     ifocus = 0;
     $("body").trigger("redraw", build_mask());
+}
+
+function reset_game() {
+    excludedLettersByLanguage.en.clear();
+    excludedLettersByLanguage.ru.clear();
+    $("#keyboard button.excluded")
+        .removeClass("excluded")
+        .attr("aria-pressed", "false");
+    reset_input();
 }
 
 function print_word(ptr, rst) {
@@ -162,8 +260,6 @@ function add_char() {
         pattern += 1;
         $('<div class="letter"></div>').appendTo("#inputs").fadeIn('slow');
         // Remeber control buttons
-        document.body.style.setProperty('--control-count', pattern + 2); //set
-        document.body.style.setProperty('--result-count', pattern); //set
         // let adjst = (pattern + 1) * 5 + (pattern + 2) * 50;
         // $("#inputs").width(adjst);
         // $("hr").width(adjst + 20);
@@ -177,8 +273,6 @@ function rem_char() {
     if (pattern > 2) {
         $("#inputs").children().last().fadeOut().remove();
         pattern -= 1;
-        document.body.style.setProperty('--control-count', pattern + 2); //set
-        document.body.style.setProperty('--result-count', pattern); //set
         // let adjst = (pattern + 1) * 5 + (pattern + 2) * 50;
         // $("#inputs").width(adjst);
         // $("hr").width(adjst + 20);
@@ -187,6 +281,6 @@ function rem_char() {
 }
 
 function pop_help(event){
-       $("#help").toggleClass(["popup","popdown"]);
+    $("#help").toggleClass(["popup","popdown"]);
 
 }

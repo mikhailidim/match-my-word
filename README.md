@@ -10,13 +10,18 @@ Type part of a word you have, and it will offer you matching combinations. You c
 
 ![Match My Word start Page](https://user-images.githubusercontent.com/10143072/158813911-c6bda072-0f9d-4f5e-84fd-69ff6220a7e3.png)
 
-Additional controls are: 
+Additional controls:
 
 | Button | Description |
 |---|---|
-| __EN/RU__ | Switches search between English and Russian dictionaries | 
-| __-__/__+__ | decrease or increase word length | 
-| __?__ | Quick reference card | 
+| __EN/RU__ | Switches between the English and Russian dictionaries |
+| __↻__ | Clears the input and resets excluded keyboard letters |
+| __-__/__+__ | Decreases or increases the word length |
+| __Enter__ | Submits the current search mask |
+| Right-click a letter (or press and hold on touch screens) | Marks it gray to exclude words containing that letter; repeat to include it again |
+| __?__ | Opens the quick reference card |
+
+The interface adapts to phone, tablet, and desktop screen sizes.
 
 
 ### Internet Access

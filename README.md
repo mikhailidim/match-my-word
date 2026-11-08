@@ -35,6 +35,12 @@ If you prefer to run a local copy - pull the docker image and run it on your loc
     
 Now the application should be available at http://127.0.0.1/. 
 
+### Automated container builds
+
+GitHub Actions builds the container on pull requests targeting `main` without publishing it. Pushes to `main`, version tags (`v*`), and manually dispatched runs build and publish to Docker Hub at `docker.io/mikhailidim/match-my-word`.
+
+Configure the repository Actions secrets `DOCKER_HUB_USERNAME` and `DOCKER_HUB_ACCESS_TOKEN` with a Docker Hub username and access token to enable publishing. Main-branch images are tagged `main` and `latest`; version-tag builds receive version and commit-SHA tags.
+
 ## Source Code
 
 If you prefer to deal with the source code - clone this repository and configure the application for execution. 
